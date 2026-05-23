@@ -54,7 +54,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       background: rgba(10,10,20,0.88);
       border-radius: 6px;
       gap: 12px;
@@ -88,7 +88,7 @@
     }
 
     /* ===== STAGE SELECT ===== */
-    #stageScreen { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    #stageScreen { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; margin: auto 0; }
 
     #stageScreen h2 {
       font-size: 1.4rem;
@@ -147,7 +147,7 @@
     .highrow { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
 
     /* ===== GAME OVER / START ===== */
-    #gameOverScreen { display: none; flex-direction: column; align-items: center; gap: 12px; }
+    #gameOverScreen { display: none; flex-direction: column; align-items: center; gap: 12px; margin: auto 0; }
     #gameOverScreen h2 { font-size: 1.8rem; }
 
     .go-info { font-size: 0.9rem; color: #ccc; }
@@ -457,7 +457,6 @@
 
   <div id="gameWrapper">
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <canvas id="particleCanvas" width="400" height="400"></canvas>
     <div id="levelFlash"></div>
     <div id="bossAlert">👑 บอสโผล่แล้ว! x3 คะแนน!</div>
     <div id="comboDisplay">
@@ -545,8 +544,7 @@
 /* ===================== CANVAS SETUP ===================== */
 const canvas  = document.getElementById('gameCanvas');
 const ctx     = canvas.getContext('2d');
-const pCanvas = document.getElementById('particleCanvas');
-const pCtx    = pCanvas.getContext('2d');
+const pCtx    = ctx; // particles drawn on same canvas
 const COLS = 20, ROWS = 20;
 const CELL = canvas.width / COLS;
 
@@ -924,20 +922,20 @@ function spawnParticles(x, y, color, count=10) {
 }
 
 function updateParticles() {
-  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  // update particle physics and draw on top of main canvas (no clearRect — draw() already cleared)
   particles = particles.filter(p => p.life > 0);
   particles.forEach(p => {
     p.x += p.vx; p.y += p.vy;
-    p.vy += 0.1; // gravity
+    p.vy += 0.1;
     p.life -= p.decay;
     p.vx *= 0.95; p.vy *= 0.95;
-    pCtx.globalAlpha = p.life;
-    pCtx.fillStyle = p.color;
-    pCtx.beginPath();
-    pCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    pCtx.fill();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fill();
   });
-  pCtx.globalAlpha = 1;
+  ctx.globalAlpha = 1;
 }
 
 /* ===================== RANDOM CELLS ===================== */
