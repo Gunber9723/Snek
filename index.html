@@ -1429,8 +1429,17 @@ document.getElementById('ctrl-down').addEventListener('click',  ()=>{if(dir.y!==
 document.getElementById('ctrl-left').addEventListener('click',  ()=>{if(dir.x!== 1)nextDir={x:-1,y:0};});
 document.getElementById('ctrl-right').addEventListener('click', ()=>{if(dir.x!==-1)nextDir={x: 1,y:0};});
 
-retryBtn.addEventListener('click', ()=>{ soundSelect(); beginCountdown(); });
+function retryGame() { soundSelect(); initGame(); overlay.style.display='none'; startGameLoop(); }
+
+retryBtn.addEventListener('click', retryGame);
 backBtn.addEventListener('click',  ()=>{ soundSelect(); showStageSelect(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ' && gameOverScreen.style.display === 'flex') {
+    e.preventDefault();
+    retryGame();
+  }
+});
 
 muteBtn.addEventListener('click', ()=>{ muted=!muted; muteBtn.textContent=muted?'🔇':'🔊'; });
 
