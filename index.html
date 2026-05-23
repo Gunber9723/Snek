@@ -487,6 +487,7 @@
       <div id="nameScreen">
         <h2>🐍 ใส่ชื่อผู้เล่น</h2>
         <input id="nameInput" type="text" maxlength="12" placeholder="ชื่อของคุณ..." />
+        <div id="nameError" style="font-size:0.75rem;color:#ff4e4e;display:none;">❌ ชื่อนี้ถูกใช้แล้ว กรุณาใช้ชื่ออื่น</div>
         <button id="nameConfirmBtn">ยืนยัน ➜</button>
       </div>
 
@@ -731,11 +732,25 @@ function getGlobalHigh() { return Math.max(...STAGES.map(s => getHighScore(s.id)
 
 /* ===================== LEADERBOARD ===================== */
 function getLB(stageId) {
-  return JSON.parse(localStorage.getItem(`snakeLB_${stageId}`) || '[]');
+  let lb = JSON.parse(localStorage.getItem(`snakeLB_${stageId}`) || '[]');
+  // dedupe ชื่อซ้ำเป๊ะ เก็บแค่คะแนนสูงสุด
+  const map = {};
+  lb.forEach(e => {
+    if (!map[e.name] || e.pts > map[e.name].pts) map[e.name] = e;
+  });
+  lb = Object.values(map).sort((a,b) => b.pts - a.pts).slice(0, 5);
+  localStorage.setItem(`snakeLB_${stageId}`, JSON.stringify(lb));
+  return lb;
 }
 function addToLB(stageId, name, pts) {
   let lb = getLB(stageId);
-  lb.push({ name, pts });
+  const existing = lb.findIndex(e => e.name === name);
+  if (existing !== -1) {
+    if (pts > lb[existing].pts) lb[existing].pts = pts;
+    else return;
+  } else {
+    lb.push({ name, pts });
+  }
   lb.sort((a,b) => b.pts - a.pts);
   lb = lb.slice(0, 5);
   localStorage.setItem(`snakeLB_${stageId}`, JSON.stringify(lb));
@@ -1444,11 +1459,31 @@ document.addEventListener('keydown', e => {
 muteBtn.addEventListener('click', ()=>{ muted=!muted; muteBtn.textContent=muted?'🔇':'🔊'; });
 
 /* ===================== NAME INPUT ===================== */
+function getAllUsedNames() {
+  const names = new Set();
+  STAGES.forEach(s => {
+    getLB(s.id).forEach(e => names.add(e.name));
+  });
+  return names;
+}
+
 document.getElementById('nameConfirmBtn').addEventListener('click', confirmName);
 nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') confirmName(); });
+nameInput.addEventListener('input', ()=>{ document.getElementById('nameError').style.display='none'; });
+
 function confirmName() {
   const n = nameInput.value.trim();
-  playerName = n || 'ผู้เล่น';
+  if (!n) { nameInput.focus(); return; }
+
+  const usedNames = getAllUsedNames();
+  // ถ้าชื่อซ้ำกับคนอื่น (ไม่ใช่ตัวเอง) ห้ามใช้
+  if (usedNames.has(n) && n !== playerName) {
+    document.getElementById('nameError').style.display = 'block';
+    nameInput.focus();
+    return;
+  }
+
+  playerName = n;
   localStorage.setItem('snakePlayerName', playerName);
   showStageSelect();
 }
